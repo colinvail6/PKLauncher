@@ -77,13 +77,17 @@ def draw_pk(t):
     kit.draw_letter(4, 1, 'p', color)
     kit.draw_letter(8, 1, 'k', color)
 
+# Define functions for ease of use
+def draw_home_screen():
+    draw_matrix()
+    animate_matrix()
+    draw_pk(t)
+
 t = 0
 while True:
     kit.check_controls()
  
-    draw_matrix()
-    animate_matrix()
-    draw_pk(t)
+    draw_home_screen()
     kit.render()
  
     t += 1
