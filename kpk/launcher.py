@@ -28,6 +28,8 @@ TRAIL_RANGE  = (3, 6)            # tail length, randomised per column
 
 columns = [{} for _ in range(GRID_W)]
 
+pk_color = [200, 255, 200] # change this to be any coolor you want!
+
 # Define functions for animation and drawing
 # These functions make a falling rain effect similar to The Matrix and M5Launcher
 def spawn_drop(col, fully_random=False):
@@ -71,8 +73,7 @@ def animate_matrix():
 def draw_pk(t):
     # Slow brightness pulse so the watermark feels alive, not static.
     pulse = 0.75 + 0.25 * math.sin(t * 0.12)
-    g = int(255 * pulse)
-    color = (int(200 * pulse), g, int(200 * pulse))
+    color = tuple(int(c * pulse) for c in pk_color)
     kit.draw_letter(4, 1, 'p', color)
     kit.draw_letter(8, 1, 'k', color)
 
