@@ -43,6 +43,9 @@ def reshuffle_drops():
     for col in columns:
         spawn_drop(col, fully_random=True)
 
+for col in columns:
+    spawn_drop(col, fully_random=True)
+
 def draw_matrix():
     kit.clear()
     for x, col in enumerate(columns):
