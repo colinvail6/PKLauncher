@@ -67,12 +67,22 @@ def animate_matrix():
         if col['head'] - col['trail'] > GRID_H:
             spawn_drop(col)
 
+# These functions draw a PK in the middle of the screen
+def draw_pk(t):
+    # Slow brightness pulse so the watermark feels alive, not static.
+    pulse = 0.75 + 0.25 * math.sin(t * 0.12)
+    g = int(255 * pulse)
+    color = (int(200 * pulse), g, int(200 * pulse))
+    kit.draw_letter(4, 1, 'p', color)
+    kit.draw_letter(8, 1, 'k', color)
+
 t = 0
 while True:
     kit.check_controls()
  
     draw_matrix()
     animate_matrix()
+    draw_pk(t)
     kit.render()
  
     t += 1
