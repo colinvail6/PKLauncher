@@ -60,6 +60,7 @@ def animate_matrix():
         if col['head'] - col['trail'] > GRID_H:
             spawn_drop(col)
 
+t = 0
 while True:
     kit.check_controls()
  
