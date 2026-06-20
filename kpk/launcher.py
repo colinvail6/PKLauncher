@@ -28,7 +28,7 @@ TRAIL_RANGE  = (3, 6)            # tail length, randomised per column
 
 columns = [{} for _ in range(GRID_W)]
 
-pk_color = [200, 255, 200] # change this to be any coolor you want!
+pk_color = [255, 0, 0] # change this to be any coolor you want!
 
 # Define functions for animation and drawing
 # These functions make a falling rain effect similar to The Matrix and M5Launcher
