@@ -34,7 +34,7 @@ TRAIL_RANGE  = (3, 6)            # tail length, randomised per column
  
 columns = [{} for _ in range(GRID_W)]
  
-pk_color = [255, 0, 0] # change this to be any coolor you want!
+pk_color = [255, 0, 0] # change this to be any color you want!
  
 APPS_DIR    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apps')
 SLIDE_STEPS = 10
