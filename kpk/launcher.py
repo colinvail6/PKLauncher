@@ -2,10 +2,14 @@
 # The launcher requires a venv with the pyserial, rpcclient, pixelkit,
 # scroll_letters, scroll_numbers, and scroll_symbols installed
 
+import glob
+import json
 import math
+import os
 import random
+import sys
 import time
-
+ 
 import pixelkit as kit
 
 # Connect to the kit's MCU
