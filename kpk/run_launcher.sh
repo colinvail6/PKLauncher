@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "[launcher] starting"
 
 while true; do
-    python3 "$SCRIPT_DIR/launcher.py"
+    python3 "$SCRIPT_DIR/launcher.py" # Use a venv for the libraries
     EXIT=$?
 
     # Exit code 130 = Ctrl-C / KeyboardInterrupt (Reset on the idle screen,
