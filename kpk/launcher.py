@@ -86,7 +86,7 @@ def draw_pk(t):
     kit.draw_letter(8, 1, 'k', color)
 
 # Define functions for ease of use
-def draw_home_screen():
+def draw_home_screen(t):
     draw_matrix()
     animate_matrix()
     draw_pk(t)
