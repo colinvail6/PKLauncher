@@ -15,6 +15,8 @@ import pixelkit as kit
 # Connect to the kit's MCU
 kit.connect()
 
+print("[launcher] connected!")
+
 # Clear the matrix
 kit.clear()
 kit.render()
@@ -206,6 +208,8 @@ kit.on_joystick_left  = wake_or(lambda: go_next(-1))
 kit.on_button_a       = wake_or(launch_selected)
 kit.on_joystick_click = wake_or(launch_selected)
 kit.on_button_reset   = handle_reset
+
+print("[launcher] started")
 
 t = 0
 while True:
