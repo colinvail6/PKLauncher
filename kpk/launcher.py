@@ -9,6 +9,9 @@ import os
 import random
 import sys
 import time
+import subprocess
+import re
+import threading
  
 import pixelkit as kit
 
@@ -23,6 +26,10 @@ kit.render()
 
 # Define variables
 GRID_W, GRID_H = kit.WIDTH, kit.HEIGHT
+BATTERY_PATH = '/org/freedesktop/UPower/devices/battery_axp20x_battery'
+LOW_BATTERY_THRESHOLD = 20 # the percentage that the launcher looks for to blink the LED
+POLL_INTERVAL = 15      # seconds between battery checks
+battery_led_on = False
  
 HEAD_COLOR   = (190, 255, 190)   # near-white leading pixel
 TAIL_MIN     = 20                # dimmest green in a fading tail
@@ -39,6 +46,9 @@ pk_color = [255, 0, 0] # change this to be any color you want!
 APPS_DIR    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apps')
 SLIDE_STEPS = 10
 SLIDE_DELAY = 0.016   # ~60 fps slide
+
+blink_thread = None
+blink_stop = threading.Event()
 
 # Define functions for animation and drawing
 # These functions make a falling rain effect similar to The Matrix and M5Launcher
@@ -202,7 +212,49 @@ def handle_reset():
         kit.interrupt()   # Reset on the home screen quits the launcher
     else:
         go_idle()         # Reset while browsing just backs out to home
- 
+
+# Define functions for the battery LED (little yellow one) (not controllable on Retail version)
+def get_battery_percent():
+    out = subprocess.run(
+        ['upower', '-i', BATTERY_PATH],
+        capture_output=True, text=True
+    ).stdout
+    match = re.search(r'percentage:\s+(\d+)%', out)
+    return int(match.group(1)) if match else None
+
+def blink_loop(kit):
+    while not _blink_stop.is_set():
+        kit._client.call('led-turn-on', [{'id': 'batt'}])
+        if _blink_stop.wait(BLINK_INTERVAL):
+            break
+        kit._client.call('led-turn-off', [{'id': 'batt'}])
+        if _blink_stop.wait(BLINK_INTERVAL):
+            break
+    kit._client.call('led-turn-off', [{'id': 'batt'}])
+
+def start_blinking(kit):
+    global blink_thread
+    if blink_thread and blink_thread.is_alive():
+        return  # already blinking
+    blink_stop.clear()
+    blink_thread = threading.Thread(target=_blink_loop, args=(kit,), daemon=True)
+    blink_thread.start()
+
+def stop_blinking():
+    if blink_thread and blink_thread.is_alive():
+        blink_stop.set()
+        blink_thread.join(timeout=2)
+
+def monitor_battery(kit):
+    while True:
+        percent = get_battery_percent()
+        if percent is not None:
+            if percent <= LOW_BATTERY_THRESHOLD:
+                start_blinking(kit)
+            else:
+                stop_blinking()
+        time.sleep(POLL_INTERVAL)
+
 kit.on_joystick_right = wake_or(lambda: go_next(1))
 kit.on_joystick_left  = wake_or(lambda: go_next(-1))
 kit.on_button_a       = wake_or(launch_selected)
