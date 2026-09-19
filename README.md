@@ -2,7 +2,7 @@
 An app launcher for the Kano Pixel Kit
 
 ## Features that have been added
-- Battery monitoring (Kickstarter Kit)
+- Battery monitoring for the Kickstarter Kit
 
 ## Features to add
 - Battery monitoring for the Retail Kit
