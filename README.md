@@ -1,2 +1,9 @@
 # PKLauncher
 An app launcher for the Kano Pixel Kit
+
+## Features that have been added
+- Battery monitoring (Kickstarter Kit)
+
+## Features to add
+- Battery monitoring for the Retail Kit
+- A way to remotely save python scripts to the kit
