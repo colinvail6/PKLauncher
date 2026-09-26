@@ -34,6 +34,9 @@
 
 #include "pixelkit.hpp"
 #include "icon_io.hpp"
+#include "config.hpp"
+#include "fire_effect.hpp"
+#include "rain_effect.hpp"
 
 namespace fs = std::filesystem;
 
@@ -43,7 +46,8 @@ namespace fs = std::filesystem;
 static const RGB  HEAD_COLOR   = {190, 255, 190};
 static const int  TAIL_MIN     = 20;
 static const int  TAIL_MAX     = 200;
-static const float TICK        = 0.07f;   // seconds per idle-screen frame
+static float TICK              = 0.07f;   // seconds per idle-screen frame;
+                                           // overridden by config.json
 
 static const float SPEED_MIN = 0.5f, SPEED_MAX = 1.3f;
 static const int   TRAIL_MIN = 3,    TRAIL_MAX = 6;
