@@ -34,7 +34,7 @@
 
 #include "pixelkit.hpp"
 #include "icon_io.hpp"
-#include "config.hpp"
+#include "config_parser.hpp"
 #include "fire_effect.hpp"
 #include "rain_effect.hpp"
 
