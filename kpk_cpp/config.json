@@ -1,0 +1,44 @@
+{
+  "idle_effect": "matrix",
+  "show_pk": true,
+  "pk_color": [255, 0, 0],
+
+  "matrix": {
+    "fps": 14.2857
+  },
+
+  "fire": {
+    "fps": 15,
+    "flare_rows": 2,
+    "max_flare": 4,
+    "flare_chance": 50,
+    "flare_decay": 28,
+    "colors": [
+      [0, 0, 0],
+      [16, 0, 0],
+      [48, 0, 0],
+      [96, 0, 0],
+      [128, 0, 0],
+      [160, 0, 0],
+      [192, 32, 0],
+      [192, 64, 0],
+      [192, 96, 0],
+      [192, 128, 0],
+      [128, 112, 128]
+    ]
+  },
+
+  "rain": {
+    "fps": 30,
+    "spawn_chance": 0.05,
+    "gravity": 0.12,
+    "speed_min": 0.3,
+    "speed_max": 0.6,
+    "cooldown_min": 5,
+    "cooldown_max": 25,
+    "splash_frames": 2,
+    "head_color": [130, 190, 255],
+    "trail_color": [40, 70, 140],
+    "splash_color": [80, 130, 200]
+  }
+}
