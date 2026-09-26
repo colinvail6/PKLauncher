@@ -1,0 +1,3 @@
+[submodule "kpk_cpp/PKLib"]
+	path = kpk_cpp/PKLib
+	url = https://github.com/colinvail6/PKLib.git
