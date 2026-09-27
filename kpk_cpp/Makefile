@@ -46,7 +46,7 @@ check-submodule:
 		exit 1; \
 	}
 
-launcher: launcher.cpp icon_io.hpp $(PKLIB_HEADERS)
+launcher: launcher.cpp icon_io.hpp config_parser.hpp fire_effect.hpp rain_effect.hpp $(PKLIB_HEADERS)
 	$(CXX) $(CXXFLAGS) -o $@ launcher.cpp $(LIBS)
 
 apps/%: apps/%.cpp $(PKLIB_HEADERS)
