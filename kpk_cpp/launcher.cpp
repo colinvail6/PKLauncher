@@ -1,12 +1,19 @@
 /*
  * launcher.cpp — PKLauncher, full C++ port
  *
- * Mirrors launcher.py's behavior exactly:
+ * Behavior:
  *   - Boots into an idle "matrix rain + pk" screen
- *   - Any button/joystick press wakes it into the app browser
- *   - Joystick left/right browses installed apps (icon preview + slide)
+ *   - Any button/joystick press wakes it into category select, showing
+ *     the icon for whatever category the dial currently points at
+ *   - Turning the dial slides between category icons (effects, games,
+ *     utils, tools, misc — one per physical dial position)
+ *   - Any button/joystick press confirms the dial-selected category and
+ *     enters its app browser
+ *   - Joystick left/right browses installed apps within that category
+ *     (icon preview + slide)
  *   - Button A or joystick click launches the selected app
- *   - Button Reset backs out one level: browse -> idle, idle -> quit
+ *   - Button Reset backs out one level: browse -> category select ->
+ *     idle -> quit
  *
  * Apps here are native executables (not scripts) — see apps_src/ for
  * examples. Each app binary sits in apps/ next to a <name>.icon.json.
@@ -303,6 +310,29 @@ static std::vector<App> discover_apps(const std::string &apps_dir) {
     return apps;
 }
 
+// ---------------------------------------------------------------------------
+// Categories — one per physical dial position. apps/<name>/ holds that
+// category's app executables + their icon.json files, exactly like the
+// old flat apps/ did. apps/category_icons/<name>.icon.json is a separate,
+// single representative icon shown while picking a category (distinct
+// from any individual app's icon, so the two never collide by name).
+
+static const char *CATEGORY_NAMES[] = {"effects", "games", "utils", "tools", "misc"};
+static const int   NUM_CATEGORIES   = sizeof(CATEGORY_NAMES) / sizeof(CATEGORY_NAMES[0]);
+
+static RGB category_icons[NUM_CATEGORIES][PK_H][PK_W];
+static std::string apps_root_dir;   // set once in main(), e.g. ".../apps"
+
+static void load_category_icons() {
+    for (int i = 0; i < NUM_CATEGORIES; i++) {
+        std::string path = apps_root_dir + "/category_icons/" +
+                            CATEGORY_NAMES[i] + ".icon.json";
+        if (!load_icon(path.c_str(), category_icons[i])) {
+            checkerboard_icon(category_icons[i]);
+        }
+    }
+}
+
 static void draw_icon(PixelKit &kit, RGB icon[PK_H][PK_W]) {
     for (int y = 0; y < PK_H; y++)
         for (int x = 0; x < PK_W; x++)
@@ -331,11 +361,14 @@ static void slide_transition(PixelKit &kit, RGB from_icon[PK_H][PK_W],
 }
 
 // ---------------------------------------------------------------------------
-// State machine: idle (matrix screen) <-> browse (app menu)
+// State machine: idle (matrix screen) <-> category select (dial) <-> browse
 
-enum class State { Idle, Browse };
+enum class State { Idle, CategorySelect, Browse };
 
-static State            state = State::Idle;
+static State state          = State::Idle;
+static int   category_index = 0;   // tracks the dial continuously, in every
+                                    // state — only drawn on screen while
+                                    // CategorySelect
 static std::vector<App> apps;
 static size_t           selected = 0;
 static bool             busy     = false;
@@ -379,19 +412,66 @@ static void launch_selected() {
     _exit(1);
 }
 
-/* Wraps a control so the first press after the matrix screen just wakes
- * the launcher into browse mode, without also performing the action.
- * Every press after that runs the action normally. */
-static std::function<void()> wake_or(std::function<void()> action) {
+static void enter_category_select() {
+    state = State::CategorySelect;
+    draw_icon(kit, category_icons[category_index]);
+    kit.render();
+}
+
+/* Scans apps/<category>/ fresh every time, rather than once at startup —
+ * so an app dropped in while the launcher is already running (e.g. via
+ * a future upload feature) shows up next time you browse that category,
+ * no restart needed. */
+static void enter_browse() {
+    state    = State::Browse;
+    apps     = discover_apps(apps_root_dir + "/" + CATEGORY_NAMES[category_index]);
+    selected = 0;
+    draw_icon(kit, reinterpret_cast<RGB(*)[PK_W]>(current_icon()));
+    kit.render();
+}
+
+/* Wraps a control so the first press at Idle advances to category select
+ * (without performing the action), the first press at CategorySelect
+ * confirms the dial's current category and advances to browse (also
+ * without performing the action), and only once in Browse does the
+ * control run its actual action. */
+static std::function<void()> advance_or(std::function<void()> action) {
     return [action]() {
         if (state == State::Idle) {
-            state = State::Browse;
-            draw_icon(kit, reinterpret_cast<RGB(*)[PK_W]>(current_icon()));
-            kit.render();
+            enter_category_select();
+        } else if (state == State::CategorySelect) {
+            enter_browse();
         } else {
             action();
         }
     };
+}
+
+/* The dial is tracked continuously regardless of state — turning it at
+ * Idle or Browse just silently updates which category is "pointed at"
+ * for next time; only CategorySelect actually animates the change,
+ * since that's the only state where a category icon is on screen. */
+static void on_dial_changed(int new_index) {
+    if (new_index < 0 || new_index >= NUM_CATEGORIES || new_index == category_index) {
+        category_index = new_index;
+        return;
+    }
+
+    if (state == State::CategorySelect && !busy) {
+        busy = true;
+        int delta = new_index - category_index;
+        int direction = (delta == 1 || delta == -(NUM_CATEGORIES - 1)) ? 1
+                       : (delta == -1 || delta == (NUM_CATEGORIES - 1)) ? -1
+                       : (delta > 0 ? 1 : -1);   // fallback for a multi-step jump
+        RGB prev[PK_H][PK_W];
+        std::copy(&category_icons[category_index][0][0],
+                  &category_icons[category_index][0][0] + PK_H * PK_W, &prev[0][0]);
+        category_index = new_index;
+        slide_transition(kit, prev, category_icons[category_index], direction);
+        busy = false;
+    } else {
+        category_index = new_index;
+    }
 }
 
 static void go_idle() {
@@ -413,10 +493,10 @@ static void interrupt() {
 }
 
 static void handle_reset() {
-    if (state == State::Idle) {
-        interrupt();   // Reset on the home screen quits the launcher
-    } else {
-        go_idle();      // Reset while browsing just backs out to home
+    switch (state) {
+        case State::Idle:            interrupt();              break;
+        case State::CategorySelect:  go_idle();                break;
+        case State::Browse:          enter_category_select();  break;
     }
 }
 
@@ -424,11 +504,14 @@ static void handle_reset() {
 // Main
 
 int main(int argc, char **argv) {
-    kit.on_joystick_right = wake_or([]() { go_next(1); });
-    kit.on_joystick_left  = wake_or([]() { go_next(-1); });
-    kit.on_button_a       = wake_or(launch_selected);
-    kit.on_joystick_click = wake_or(launch_selected);
+    kit.on_joystick_right = advance_or([]() { go_next(1); });
+    kit.on_joystick_left  = advance_or([]() { go_next(-1); });
+    kit.on_joystick_up    = advance_or([]() {});   // no action at Browse yet
+    kit.on_joystick_down  = advance_or([]() {});
+    kit.on_button_a       = advance_or(launch_selected);
+    kit.on_joystick_click = advance_or(launch_selected);
     kit.on_button_reset   = handle_reset;
+    kit.on_dial           = on_dial_changed;
 
     if (!kit.connect()) {
         fprintf(stderr, "failed to connect to Pixel Kit\n");
@@ -442,7 +525,8 @@ int main(int argc, char **argv) {
     // was invoked from
     std::string exe_dir = fs::canonical(fs::path(argv[0])).parent_path().string();
     load_home_screen_config(exe_dir + "/config.json");
-    apps = discover_apps(exe_dir + "/apps");
+    apps_root_dir = exe_dir + "/apps";
+    load_category_icons();
 
     for (auto &col : columns) spawn_drop(col, true);
 
@@ -454,8 +538,9 @@ int main(int argc, char **argv) {
             draw_home_screen(kit, t);
             kit.render();
         }
-        // Browse state doesn't redraw every frame — the icon is static
-        // until go_next()/wake_or() repaints it, which already renders.
+        // CategorySelect/Browse don't redraw every frame — the icon is
+        // static until go_next()/advance_or()/on_dial_changed() repaints
+        // it, which already renders.
 
         t++;
         usleep((useconds_t)(TICK * 1'000'000));

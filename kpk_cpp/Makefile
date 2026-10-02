@@ -27,10 +27,11 @@ PKLIB_HEADERS := $(PKLIB_DIR)/pixelkit.hpp \
 
 CXXFLAGS += -I$(PKLIB_DIR)
 
-# App sources and their compiled binaries both live in apps/ —
-# e.g. apps/snake.cpp builds to apps/snake, sitting right next to
-# apps/snake.icon.json.
-APP_SOURCES  := $(wildcard apps/*.cpp)
+# App sources and their compiled binaries both live in apps/<category>/ —
+# e.g. apps/games/snake.cpp builds to apps/games/snake, sitting right
+# next to apps/games/snake.icon.json. Categories are exactly one level
+# deep, so a single apps/*/*.cpp glob finds everything.
+APP_SOURCES  := $(wildcard apps/*/*.cpp)
 APP_BINARIES := $(APP_SOURCES:.cpp=)
 
 .PHONY: all clean check-submodule
