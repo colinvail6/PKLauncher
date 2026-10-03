@@ -1,0 +1,32 @@
+name: Build PKLauncher
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential g++
+
+    - name: Build launcher and apps
+      working-directory: kpk_cpp
+      run: make
+
+    - name: Verify build artifacts
+      working-directory: kpk_cpp
+      run: |
+        test -f launcher && echo "✓ launcher built successfully" || (echo "✗ launcher build failed" && exit 1)
+        ls -la launcher
+        ls -la apps/*/
