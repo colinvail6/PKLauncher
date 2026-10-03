@@ -428,6 +428,18 @@ static void enter_browse() {
     state    = State::Browse;
     apps     = discover_apps(apps_root_dir + "/" + CATEGORY_NAMES[category_index]);
     selected = 0;
+
+    if (apps.empty()) {
+        // Distinct from a missing/broken icon file (which falls back to
+        // a checkerboard) — this is a legitimately empty category, so
+        // say so explicitly rather than showing the same ambiguous
+        // placeholder for two different situations.
+        kit.scroll("empty", {80, 80, 80}, {0, 0, 0}, 60);
+        kit.clear();
+        kit.render();
+        return;
+    }
+
     draw_icon(kit, reinterpret_cast<RGB(*)[PK_W]>(current_icon()));
     kit.render();
 }
@@ -454,9 +466,11 @@ static std::function<void()> advance_or(std::function<void()> action) {
  * for next time; only CategorySelect actually animates the change,
  * since that's the only state where a category icon is on screen. */
 static void on_dial_changed(int new_index) {
-    if (new_index < 0 || new_index >= NUM_CATEGORIES || new_index == category_index) {
-        category_index = new_index;
-        return;
+    if (new_index < 0 || new_index >= NUM_CATEGORIES) {
+        return;   // out-of-range value — ignore entirely, never adopt it
+    }
+    if (new_index == category_index) {
+        return;   // no change — nothing to redraw
     }
 
     if (state == State::CategorySelect && !busy) {
