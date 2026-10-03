@@ -328,6 +328,8 @@ static void load_category_icons() {
         std::string path = apps_root_dir + "/category_icons/" +
                             CATEGORY_NAMES[i] + ".icon.json";
         if (!load_icon(path.c_str(), category_icons[i])) {
+            fprintf(stderr, "[launcher] could not load category icon '%s' "
+                            "(falling back to checkerboard)\n", path.c_str());
             checkerboard_icon(category_icons[i]);
         }
     }
