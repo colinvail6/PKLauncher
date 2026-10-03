@@ -30,3 +30,11 @@ jobs:
         test -f launcher && echo "✓ launcher built successfully" || (echo "✗ launcher build failed" && exit 1)
         ls -la launcher
         ls -la apps/*/
+
+    - name: Commit and push binaries
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add kpk_cpp/launcher kpk_cpp/apps/
+        git commit -m "Build: compiled launcher and app binaries" || echo "No changes to commit"
+        git push
