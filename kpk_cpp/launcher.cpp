@@ -44,6 +44,7 @@
 #include "config_parser.hpp"
 #include "fire_effect.hpp"
 #include "rain_effect.hpp"
+#include "perlin_effect.hpp"
 
 namespace fs = std::filesystem;
 
@@ -93,12 +94,13 @@ static RGB    pk_color = {255, 0, 0};   // change this to any color you want!
 // which reproduce the original matrix-only behavior exactly. See
 // CONFIG.md for the full field reference.
 
-enum class IdleEffect { Matrix, Fire, Rain };
+enum class IdleEffect { Matrix, Fire, Rain, Perlin };
 static IdleEffect g_idle_effect = IdleEffect::Matrix;
 static bool       g_show_pk     = true;
 
-static FireEffect fire_effect;
-static RainEffect rain_effect;
+static FireEffect   fire_effect;
+static RainEffect   rain_effect;
+static PerlinEffect perlin_effect;
 
 static void spawn_drop(Column &col, bool fully_random) {
     col.speed = frand(SPEED_MIN, SPEED_MAX);
@@ -236,6 +238,39 @@ static void load_home_screen_config(const std::string &config_path) {
         rain_effect.reset();
         TICK = 1.0f / fps;
 
+    } else if (idle_effect_str == "perlin") {
+        g_idle_effect = IdleEffect::Perlin;
+        const JsonValue &pc = cfg["perlin"];
+        float fps = pc["fps"].as_float(perlin_effect.framerate);
+
+        PerlinOptionalConfig opt;
+        opt.scale   = pc["scale"].as_float(-1.0f);
+        opt.octaves = pc["octaves"].as_int(-1);
+        opt.seed    = pc["seed"].as_int(-1);
+        if (!pc["z_speed"].is_null()) {
+            opt.z_speed = pc["z_speed"].as_float(0.05f);
+        }
+
+        // "palette" can be either a built-in name ("rainbow"/"grayscale"/
+        // "fire"/"water") or an inline array of [r,g,b] stops for a fully
+        // custom gradient — config_parser.hpp's JsonValue::type tells us
+        // which was given.
+        const JsonValue &pal = pc["palette"];
+        if (pal.type == JsonType::Array) {
+            opt.has_custom_palette = true;
+            for (auto &entry : pal.arrValue) {
+                auto rgb = entry.as_rgb({0, 0, 0});
+                opt.custom_palette.push_back({(uint8_t)rgb.r, (uint8_t)rgb.g, (uint8_t)rgb.b});
+            }
+        } else if (pal.type == JsonType::String) {
+            opt.has_palette_name = true;
+            opt.palette_name = pal.strValue;
+        }
+
+        perlin_effect.configure(PK_W, PK_H, fps, opt);
+        perlin_effect.reset();
+        TICK = 1.0f / fps;
+
     } else {
         if (idle_effect_str != "matrix") {
             fprintf(stderr, "[launcher] unknown idle_effect '%s' in config.json, "
@@ -256,6 +291,10 @@ static void draw_home_screen(PixelKit &kit, int t) {
         case IdleEffect::Rain:
             rain_effect.step();
             rain_effect.draw(kit);
+            break;
+        case IdleEffect::Perlin:
+            perlin_effect.step();
+            perlin_effect.draw(kit);
             break;
         default:
             draw_matrix(kit);
@@ -493,9 +532,10 @@ static void on_dial_changed(int new_index) {
 static void go_idle() {
     state = State::Idle;
     switch (g_idle_effect) {
-        case IdleEffect::Fire: fire_effect.reset(); break;
-        case IdleEffect::Rain: rain_effect.reset(); break;
-        default:               reshuffle_drops();   break;
+        case IdleEffect::Fire:   fire_effect.reset();   break;
+        case IdleEffect::Rain:   rain_effect.reset();   break;
+        case IdleEffect::Perlin: perlin_effect.reset(); break;
+        default:                 reshuffle_drops();     break;
     }
 }
 
