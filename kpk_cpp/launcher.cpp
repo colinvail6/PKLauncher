@@ -434,7 +434,7 @@ static void enter_browse() {
         // a checkerboard) — this is a legitimately empty category, so
         // say so explicitly rather than showing the same ambiguous
         // placeholder for two different situations.
-        kit.scroll("empty", {80, 80, 80}, {0, 0, 0}, 60);
+        kit.scroll("empty", {127, 127, 127}, {0, 0, 0}, 60);
         kit.clear();
         kit.render();
         return;
