@@ -1,7 +1,7 @@
 {
   "idle_effect": "perlin",
   "show_pk": true,
-  "pk_color": [255, 0, 0],
+  "pk_color": [0, 255, 255],
 
   "matrix": {
     "fps": 14.2857
