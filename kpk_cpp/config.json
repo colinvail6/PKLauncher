@@ -40,7 +40,7 @@
     "head_color": [130, 190, 255],
     "trail_color": [40, 70, 140],
     "splash_color": [80, 130, 200]
-  }
+  },
   
   "perlin": {
     "fps": 30,
