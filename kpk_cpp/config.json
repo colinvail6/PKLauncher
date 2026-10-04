@@ -1,5 +1,5 @@
 {
-  "idle_effect": "matrix",
+  "idle_effect": "perlin",
   "show_pk": true,
   "pk_color": [255, 0, 0],
 
@@ -40,5 +40,14 @@
     "head_color": [130, 190, 255],
     "trail_color": [40, 70, 140],
     "splash_color": [80, 130, 200]
+  }
+  
+  "perlin": {
+    "fps": 30,
+    "scale": 0.4,
+    "z_speed": 0.08,
+    "octaves": 2,
+    "seed": 7,
+    "palette": "fire"
   }
 }
